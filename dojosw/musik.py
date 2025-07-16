@@ -2,12 +2,9 @@ import copy
 from typing import List, Union
 
 import numpy as np
-# noinspection PyProtectedMember
-from IPython import get_ipython
 from IPython.display import Audio
 
 current_tones = []
-current_execution_count = 0
 SAMPLERATE = 44100  # sampling rate
 
 
@@ -57,7 +54,6 @@ def create_sound(tasten: List[int], dauer):
 
 
 def ton(taste: Union[int, List[int]], dauer: float = 1.0):
-    global current_execution_count
     global current_tones
 
     if dauer > 1000:
@@ -73,16 +69,14 @@ def ton(taste: Union[int, List[int]], dauer: float = 1.0):
         if t > 29:
             raise ValueError('Die Taste ist mir zu hoch, da mach ich nicht mit. Maximal sind -13 bis 29 erlaubt.')
 
-    if current_execution_count != get_ipython().execution_count:
-        current_tones = []
-        current_execution_count = get_ipython().execution_count
-
     current_tones.append(Ton(taste, dauer))
 
 
 def spiele():
+    global current_tones
     if not current_tones:
-        return
+        return None
     sounds = [create_sound(t.tasten, t.dauer) for t in current_tones]
     sound = np.concatenate(sounds)
+    current_tones = []
     return Audio(sound, rate=SAMPLERATE, autoplay=True)
