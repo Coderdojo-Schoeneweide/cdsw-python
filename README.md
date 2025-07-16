@@ -1,2 +1,2 @@
 # cdsw-python
-Python biblitheken für das CoderDojo Schöneweide
+Python Bibliotheken für das CoderDojo Schöneweide
