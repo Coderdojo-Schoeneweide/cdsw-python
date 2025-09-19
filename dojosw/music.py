@@ -9,9 +9,10 @@ SAMPLERATE = 44100  # sampling rate
 
 
 class Tone:
-    def __init__(self, keys, duration):
+    def __init__(self, keys, duration, volume):
         self.keys = keys
         self.duration = duration
+        self.volume = volume
 
 
 def to_list(i):
@@ -41,42 +42,45 @@ def key_to_pitch(key: int) -> int:
     return 12 + octave * 12 + c_major_offsets[degree]
 
 
-def create_sound(keys: List[int], dauer):
+def create_sound(keys: List[int], duration, volume):
     pitches = [key_to_pitch(t) for t in keys]
 
     freqs = [440.0 * (2 ** ((p - 69) / 12)) for p in pitches]
 
-    t = np.linspace(0, dauer, int(SAMPLERATE * dauer), False)
-    sounds = [0.5 * np.sin(2 * np.pi * f * t) for f in freqs]
+    t = np.linspace(0, duration, int(SAMPLERATE * duration), False)
+    sounds = [0.5 * np.sin(2 * np.pi * f * t) * volume for f in freqs]
     window = create_window(len(t))
     sound = np.sum(sounds, axis=0)
     return sound * window
 
 
-def tone(key: Union[int, List[int]], duration: float = 1.0):
+def tone(key: Union[int, List[int]], duration: float = 1.0, volume: float = 1.0):
     global current_tones
 
     if duration > 1000:
-        raise ValueError('Der Ton ist zu lang, da mach ich nicht mit. Maximal sind 1000 Sekunden erlaubt.')
+        raise ValueError('The tone is too long. A maximum of 1000 seconds is allowed.')
+
+    if volume > 2.0:
+        raise ValueError('The tone is too loud. A maximum of 2.0 is allowed.')
 
     key = to_list(key)
     if len(key) > 100:
-        raise ValueError('Das sind mir zu viele Tasten, da mach ich nicht mit. Maximal sind 100 Tasten erlaubt.')
+        raise ValueError('That\'s too many tones for me. A maximum of 100 tones are allowed.')
 
     for t in key:
         if t < -13:
-            raise ValueError('Die Taste ist mir zu tief, da mach ich nicht mit. Maximal sind -13 bis 29 erlaubt.')
+            raise ValueError('The tone is too deep for me. The maximum allowed range is -13 to 29.')
         if t > 29:
-            raise ValueError('Die Taste ist mir zu hoch, da mach ich nicht mit. Maximal sind -13 bis 29 erlaubt.')
+            raise ValueError('The tone is too high for me. The maximum allowed range is -13 to 29.')
 
-    current_tones.append(Tone(key, duration))
+    current_tones.append(Tone(key, duration, volume))
 
 
 def play():
     global current_tones
     if not current_tones:
         return None
-    sounds = [create_sound(t.keys, t.duration) for t in current_tones]
+    sounds = [create_sound(t.keys, t.duration, t.volume) for t in current_tones]
     sound = np.concatenate(sounds)
     current_tones = []
     return Audio(sound, rate=SAMPLERATE, autoplay=True)
